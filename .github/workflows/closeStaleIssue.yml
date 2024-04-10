@@ -1,64 +1,31 @@
-# This workflow will build a package using Maven and then publish it to GitHub packages when a release is created
-# For more information see: https://github.com/actions/setup-java#apache-maven-with-a-settings-path
-
-name: CloseStaleIssue
-
-on:
-   schedule: 
-       - cron: '1 15 1/2 * *'
-       
 jobs:
   build:
-
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
-    - name: Close issues of hosts label
+    - continue-on-error: true
+      name: Close issues of hosts label
       uses: actions/github-script@v7.0.1
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          let response = await github.rest.issues.listForRepo({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            state: 'open'
-          });
-          let data = response['data'];
-          
-          data.forEach(function(issue){
-            var labels = issue['labels'];
-            var is2Deal = true;
-            for(var i=0,l=labels.length;i<l;i++){
-                if(labels[i]['name'] == 'pending' || labels[i]['name'] == 'help wanted' || labels[i]['name'] == 'instruction'){
-                    is2Deal = false;
-                    break;
-                }
-            }
-            if(is2Deal){
-                var updated_at = new Date(issue['updated_at']);
-                var time_now = new Date();
-                var deta = time_now.getTime() - updated_at.getTime();
-                console.log('deta: ' + deta);
-                if(deta < 1000*60*60*24*30){
-                    is2Deal = false;
-                }   
-            }
-            if(is2Deal){
-                var id = issue['number'];
-                github.rest.issues.createComment({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: id,
-                    body: '由于长期没有状态更新，该问题自动关闭。如有需要可重新打开。'
-                });
-                github.rest.issues.update({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: id,
-                  state: 'closed'
-                });
-            }                
-          });
-
-    
-
-
+        script: "let response = await github.rest.issues.listForRepo({\n  owner: context.repo.owner,\n\
+          \  repo: context.repo.repo,\n  state: 'open'\n});\nlet data = response['data'];\n\
+          \ndata.forEach(function(issue){\n  var labels = issue['labels'];\n  var\
+          \ is2Deal = true;\n  for(var i=0,l=labels.length;i<l;i++){\n      if(labels[i]['name']\
+          \ == 'pending' || labels[i]['name'] == 'help wanted' || labels[i]['name']\
+          \ == 'instruction'){\n          is2Deal = false;\n          break;\n   \
+          \   }\n  }\n  if(is2Deal){\n      var updated_at = new Date(issue['updated_at']);\n\
+          \      var time_now = new Date();\n      var deta = time_now.getTime() -\
+          \ updated_at.getTime();\n      console.log('deta: ' + deta);\n      if(deta\
+          \ < 1000*60*60*24*30){\n          is2Deal = false;\n      }   \n  }\n  if(is2Deal){\n\
+          \      var id = issue['number'];\n      github.rest.issues.createComment({\n\
+          \          owner: context.repo.owner,\n          repo: context.repo.repo,\n\
+          \          issue_number: id,\n          body: '\u7531\u4E8E\u957F\u671F\u6CA1\
+          \u6709\u72B6\u6001\u66F4\u65B0\uFF0C\u8BE5\u95EE\u9898\u81EA\u52A8\u5173\
+          \u95ED\u3002\u5982\u6709\u9700\u8981\u53EF\u91CD\u65B0\u6253\u5F00\u3002\
+          '\n      });\n      github.rest.issues.update({\n        owner: context.repo.owner,\n\
+          \        repo: context.repo.repo,\n        issue_number: id,\n        state:\
+          \ 'closed'\n      });\n  }                \n});\n"
+name: CloseStaleIssue
+on:
+  repository_dispatch:
+    types: trigger-ga___closeStaleIssue.yml
